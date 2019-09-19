@@ -10,6 +10,11 @@ entrypoint: gunicorn -b :$PORT app:app
 # The settings below are to reduce costs during testing and not appropriate for production use.
 # You would obviously want to increase the values for computing resources and look into auto scaling when running production workloads.
 
+env_variables:
+  CLOUD_SQL_USERNAME: postgres
+  CLOUD_SQL_PASSWORD: 123
+  CLOUD_SQL_DATABASE_NAME: postgres
+  CLOUD_SQL_CONNECTION_NAME: affable-tangent-247104:australia-southeast1:smart-viticulture
 # manual_scaling:
 #   instances: 1
 # resources:
