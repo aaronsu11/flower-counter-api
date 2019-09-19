@@ -9,6 +9,11 @@ from .estimator import estimate_yield
 api = Blueprint("api", __name__)
 
 
+@api.route("/")
+def debug():
+    return jsonify("Running"), 201
+
+
 @api.route("/add_task", methods=["POST"])
 def add_task():
     task_info = request.get_json()
