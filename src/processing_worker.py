@@ -2,7 +2,8 @@ from flask import Blueprint, jsonify, request
 from flask_mail import Message
 from . import db, storage, mail
 from .models import Images
-from .counter import count_flower
+
+# from .counter import count_flower
 from .estimator import estimate_yield
 
 
@@ -30,8 +31,8 @@ def add_task():
 
     # Processing
     image_url = storage.child(path + name).get_url(None)
-    result = count_flower(image_url)
-    # result = 1
+    # result = count_flower(image_url)
+    result = 1
 
     # Update database
     # setattr(new_task, "result", "processed")
