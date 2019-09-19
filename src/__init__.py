@@ -4,7 +4,7 @@ from flask_sqlalchemy import SQLAlchemy
 import pyrebase
 from flask_mail import Mail
 
-import os
+# import os
 
 firebase_config = {
     "apiKey": "AIzaSyBE-xgkJMD5o1hgU_C_dx82lfMFW7HKQe0",
