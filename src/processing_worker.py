@@ -10,8 +10,9 @@ from .estimator import estimate_yield
 api = Blueprint("api", __name__)
 
 
-@api.route("/")
+@api.route("/create_table")
 def debug():
+    db.create_all()
     return jsonify("Running"), 201
 
 

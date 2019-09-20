@@ -5,6 +5,12 @@ import pyrebase
 from flask_mail import Mail
 import os
 
+db_user = os.environ.get("CLOUD_SQL_USERNAME")
+db_pass = os.environ.get("CLOUD_SQL_PASSWORD")
+db_name = os.environ.get("CLOUD_SQL_DATABASE_NAME")
+cloud_sql_connection_name = os.environ.get("CLOUD_SQL_CONNECTION_NAME")
+host = "/cloudsql/{}".format(cloud_sql_connection_name)
+
 firebase_config = {
     "apiKey": "AIzaSyBE-xgkJMD5o1hgU_C_dx82lfMFW7HKQe0",
     "authDomain": "affable-tangent-247104.firebaseapp.com",
@@ -43,7 +49,13 @@ def create_app():
     app.config.update(mail_settings)
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     # app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///database.db"
-    app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL")
+    # app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL")
+
+    app.config[
+        "SQLALCHEMY_DATABASE_URI"
+    ] = "postgresql+psycopg2://{user}:{pw}@{url}/{db}".format(
+        user=db_user, pw=db_pass, url=host, db=db_name
+    )
 
     db.init_app(app)
     cors.init_app(app)
