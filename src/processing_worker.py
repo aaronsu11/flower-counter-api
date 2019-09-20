@@ -3,17 +3,17 @@ from flask_mail import Message
 from . import db, storage, mail
 from .models import Images
 
-# from .counter import count_flower
+from .counter import count_flower
 from .estimator import estimate_yield
 
 
 api = Blueprint("api", __name__)
 
-
-@api.route("/create_table")
-def debug():
-    db.create_all()
-    return jsonify("Running"), 201
+# Only use when first run -> init or potentially reset database
+# @api.route("/create_table")
+# def debug():
+#     db.create_all()
+#     return jsonify("Running"), 201
 
 
 @api.route("/add_task", methods=["POST"])
@@ -32,8 +32,7 @@ def add_task():
 
     # Processing
     image_url = storage.child(path + name).get_url(None)
-    # result = count_flower(image_url)
-    result = 1
+    result = count_flower(image_url)
 
     # Update database
     # setattr(new_task, "result", "processed")

@@ -9,7 +9,7 @@ db_user = os.environ.get("CLOUD_SQL_USERNAME")
 db_pass = os.environ.get("CLOUD_SQL_PASSWORD")
 db_name = os.environ.get("CLOUD_SQL_DATABASE_NAME")
 cloud_sql_connection_name = os.environ.get("CLOUD_SQL_CONNECTION_NAME")
-host = "/cloudsql/{}".format(cloud_sql_connection_name)
+# host = "/cloudsql/{}".format(cloud_sql_connection_name)
 
 firebase_config = {
     "apiKey": "AIzaSyBE-xgkJMD5o1hgU_C_dx82lfMFW7HKQe0",
@@ -48,13 +48,19 @@ def create_app():
     app = Flask(__name__)
     app.config.update(mail_settings)
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
+    # SQL connection (choose one)
+    # a. Local config
     # app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///database.db"
+
+    # b. Heroku config
     # app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL")
 
+    # c. Cloud SQL config
     app.config[
         "SQLALCHEMY_DATABASE_URI"
-    ] = "postgresql+psycopg2://{user}:{pw}@{url}/{db}".format(
-        user=db_user, pw=db_pass, url=host, db=db_name
+    ] = "postgresql+pg8000://{user}:{pw}@/{db}?unix_sock=/cloudsql/{instance}/.s.PGSQL.5432".format(
+        user=db_user, pw=db_pass, db=db_name, instance=cloud_sql_connection_name
     )
 
     db.init_app(app)
