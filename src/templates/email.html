@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <style>
+      table {
+        font-family: arial, sans-serif;
+        border-collapse: collapse;
+        width: 100%;
+      }
+
+      td,
+      th {
+        border: 1px solid #dddddd;
+        text-align: left;
+        padding: 8px;
+      }
+
+      tr:nth-child(even) {
+        background-color: #dddddd;
+      }
+    </style>
+  </head>
+
+  <body>
+    <p>Hi {{ summary.batch_info.name }},</p>
+    <p>Here is the result of your dataset</p>
+    <h2>Statistic Summary</h2>
+    <p>
+      of dataset for Vineyard {{ summary.batch_info.vineyard }}, Block
+      {{ summary.batch_info.block_id }}, with
+      {{ summary.batch_info.variety }} at EL-stage
+      {{ summary.batch_info.el_stage }}.
+    </p>
+    <p>You obtained this dataset at {{ summary.batch_info.date }}</p>
+    <table>
+      <tr>
+        <th>Title</th>
+        <th>Value</th>
+      </tr>
+      <tr>
+        <td>Your Sample Size</td>
+        <td>{{ summary.size }}</td>
+      </tr>
+      <tr>
+        <td>Best Sample Size</td>
+        <td>{{ summary.bss }}</td>
+      </tr>
+      <tr>
+        <td>Mean</td>
+        <td>{{ summary.mean }}</td>
+      </tr>
+      <tr>
+        <td>Standard Deviation</td>
+        <td>{{ summary.stdev }}</td>
+      </tr>
+      <tr>
+        <td>Maximum</td>
+        <td>{{ summary.max }}</td>
+      </tr>
+      <tr>
+        <td>Minimum</td>
+        <td>{{ summary.min }}</td>
+      </tr>
+    </table>
+  </body>
+</html>
