@@ -51,17 +51,17 @@ def create_app():
 
     # SQL connection (choose one)
     # a. Local config
-    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///database.db"
+    # app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///database.db"
 
     # b. Heroku config
     # app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL")
 
     # c. Cloud SQL config
-    # app.config[
-    #     "SQLALCHEMY_DATABASE_URI"
-    # ] = "postgresql+pg8000://{user}:{pw}@/{db}?unix_sock=/cloudsql/{instance}/.s.PGSQL.5432".format(
-    #     user=db_user, pw=db_pass, db=db_name, instance=cloud_sql_connection_name
-    # )
+    app.config[
+        "SQLALCHEMY_DATABASE_URI"
+    ] = "postgresql+pg8000://{user}:{pw}@/{db}?unix_sock=/cloudsql/{instance}/.s.PGSQL.5432".format(
+        user=db_user, pw=db_pass, db=db_name, instance=cloud_sql_connection_name
+    )
 
     db.init_app(app)
     cors.init_app(app)
