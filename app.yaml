@@ -1,11 +1,12 @@
 # See https://cloud.google.com/appengine/docs/flexible/python/configuring-your-app-with-app-yaml
 # and https://cloud.google.com/appengine/docs/flexible/python/reference/app-yaml for more info
-
 runtime: python37
+
+instance_class: F2
 # runtime_config:
 #   python_version: 3
 # env: flex
-service: python
+# service: counterapi
 entrypoint: gunicorn -b :$PORT app:app
 # The settings below are to reduce costs during testing and not appropriate for production use.
 # You would obviously want to increase the values for computing resources and look into auto scaling when running production workloads.
@@ -14,7 +15,7 @@ env_variables:
   CLOUD_SQL_USERNAME: postgres
   CLOUD_SQL_PASSWORD: 123
   CLOUD_SQL_DATABASE_NAME: postgres
-  CLOUD_SQL_CONNECTION_NAME: affable-tangent-247104:australia-southeast1:smart-viticulture
+  CLOUD_SQL_CONNECTION_NAME: flower-counter:australia-southeast1:flowercounter-postgres
 # manual_scaling:
 #   instances: 1
 # resources:

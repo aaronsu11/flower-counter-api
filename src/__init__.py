@@ -3,65 +3,31 @@ from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 import pyrebase
 from flask_mail import Mail
-import os
-
-db_user = os.environ.get("CLOUD_SQL_USERNAME")
-db_pass = os.environ.get("CLOUD_SQL_PASSWORD")
-db_name = os.environ.get("CLOUD_SQL_DATABASE_NAME")
-cloud_sql_connection_name = os.environ.get("CLOUD_SQL_CONNECTION_NAME")
-# host = "/cloudsql/{}".format(cloud_sql_connection_name)
+from .config import Config
 
 firebase_config = {
-    "apiKey": "AIzaSyBE-xgkJMD5o1hgU_C_dx82lfMFW7HKQe0",
-    "authDomain": "affable-tangent-247104.firebaseapp.com",
-    "databaseURL": "https://affable-tangent-247104.firebaseio.com",
-    "projectId": "affable-tangent-247104",
-    "storageBucket": "affable-tangent-247104.appspot.com",
-    "messagingSenderId": "44158393615",
-    "appId": "1:44158393615:web:4328365a2657e8f6",
+    "apiKey": "AIzaSyBmbEYCRih5N8ls-UYgv26OnAz67IDR8gk",
+    "authDomain": "flower-counter.firebaseapp.com",
+    "databaseURL": "https://flower-counter.firebaseio.com",
+    "projectId": "flower-counter",
+    "storageBucket": "flower-counter.appspot.com",
+    "messagingSenderId": "276724841166",
+    "appId": "1:276724841166:web:9a24d03f468502b5992e9f",
+    "measurementId": "G-4HSDYZE7SQ",
 }
 
 firebase = pyrebase.initialize_app(firebase_config)
 
 storage = firebase.storage()
 
-mail_settings = {
-    "MAIL_SERVER": "smtp.gmail.com",
-    "MAIL_PORT": 465,
-    "MAIL_USE_TLS": False,
-    "MAIL_USE_SSL": True,
-    # "MAIL_USERNAME": os.environ["EMAIL_USER"],
-    # "MAIL_PASSWORD": os.environ["EMAIL_PASSWORD"],
-    "MAIL_USERNAME": "ssd951106@gmail.com",
-    "MAIL_PASSWORD": "19951106ssd",
-    "MAIL_DEFAULT_SENDER": ("UNSW FCS", "ssd951106@gmail.com"),
-    "MAIL_MAX_EMAILS": 3
-    # "MAIL_ASCII_ATTACHMENTS": False
-}
-
 db = SQLAlchemy()
 cors = CORS()
 mail = Mail()
 
 
-def create_app():
+def create_app(config_class=Config):
     app = Flask(__name__)
-    app.config.update(mail_settings)
-    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-
-    # SQL connection (choose one)
-    # a. Local config
-    # app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///database.db"
-
-    # b. Heroku config
-    # app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL")
-
-    # c. Cloud SQL config
-    app.config[
-        "SQLALCHEMY_DATABASE_URI"
-    ] = "postgresql+pg8000://{user}:{pw}@/{db}?unix_sock=/cloudsql/{instance}/.s.PGSQL.5432".format(
-        user=db_user, pw=db_pass, db=db_name, instance=cloud_sql_connection_name
-    )
+    app.config.from_object(config_class)
 
     db.init_app(app)
     cors.init_app(app)

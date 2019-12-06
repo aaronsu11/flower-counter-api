@@ -10,7 +10,7 @@ def email_message(summary):
     msg = Message(
         subject=f"Results for Vineyard {vineyard}, Block {block_name} from UNSW Flower Counting System ",
         recipients=[email],
-        reply_to="aaronsu11@outlook.com",
+        reply_to="vyepproject@gmail.com",
     )
     # msg.html = f"<b> Hello Test </b><p>The result is {MEAN}</p>"
     msg.html = render_template("email.html", summary=summary)

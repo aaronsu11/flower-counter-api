@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify, request
 from . import db, storage
-from .models import Images
+from .models import Images, Parameters
 from .counter import count_flower
 from .summarizer import summarize
 from .messager import email_message
@@ -8,15 +8,26 @@ from .messager import email_message
 
 api = Blueprint("api", __name__)
 
+
+@api.route("/")
+def serverCheck():
+    """Return a friendly HTTP greeting."""
+    return "Server Running"
+
+
 # Only use when first run -> init or potentially reset database
 @api.route("/create_table", methods=["POST"])
 def debug():
     admin_info = request.get_json()
     username = admin_info["username"]
     password = admin_info["password"]
+    message = ""
     if (username == "admin") and (password == "db_init"):
         db.create_all()
-    return jsonify("Init Successful"), 201
+        message = "Init Successful"
+    else:
+        message = "Init Fail"
+    return jsonify(message), 201
 
 
 @api.route("/add_task", methods=["POST"])
@@ -26,6 +37,7 @@ def add_task():
     userid = task_info["userid"]
     batchid = task_info["batchid"]
     path = task_info["path"]
+    label = task_info["label"]
     name = task_info["name"]
 
     # Delete duplicate records
@@ -47,27 +59,35 @@ def add_task():
     new_task = Images(userid=userid, batchid=batchid, path=path, name=name)
     db.session.add(new_task)
     db.session.commit()
-    # taskid = new_task.id
 
     # Processing
     image_url = storage.child(path + name).get_url(None)
-    result = count_flower(image_url)
+    result = float(count_flower(image_url))
     # result = 1
+
+    params = Parameters.query.filter_by(label=label).first()
+    if params:
+        slope = float(params.slope)
+        intercept = float(params.intercept)
+        message = "model found"
+        # slope = 100
+        # intercept = 0
+    else:
+        slope = 1
+        intercept = 0
+        message = "model not exists"
+
+    estimate = result * slope + intercept
 
     # Update database
     # setattr(new_task, "result", "processed")
     new_task.status = "processed"
-    new_task.result = result
+    new_task.result = float(result)
+    new_task.estimate = float(estimate)
     db.session.commit()
 
     return jsonify(
-        {
-            "id": new_task.id,
-            "batchid": batchid,
-            "path": path,
-            "name": name,
-            "result": result,
-        }
+        {"id": new_task.id, "result": result, "message": message, "estimate": estimate}
     )
     # return jsonify({"status": "success"}), 201
 
@@ -99,7 +119,7 @@ def get_report():
 
     results = []
     for task in task_list:
-        results.append(task.result)
+        results.append(float(task.result))
 
     summary = summarize(results)
 
@@ -120,12 +140,7 @@ def results(userid):
     results = []
     for task in task_list:
         results.append(
-            {
-                "path": task.path,
-                "name": task.name,
-                "processed": task.processed,
-                "result": task.result,
-            }
+            {"name": task.name, "status": task.status, "result": float(task.result)}
         )
     return jsonify({"results": results}), 201
 

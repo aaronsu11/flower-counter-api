@@ -7,7 +7,10 @@ def count_flower(image_url):
 
     url_response = urllib.request.urlopen(image_url)
     image_array = np.asarray(bytearray(url_response.read()), dtype=np.uint8)
+    del url_response
     image = cv.imdecode(image_array, cv.IMREAD_COLOR)
+    del image_array
+
     # cv.imshow("URL Image", image)
 
     lower_green = np.array([35, 0, 0])

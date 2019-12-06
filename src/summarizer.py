@@ -1,5 +1,6 @@
 from statistics import mean, stdev
 from scipy import stats
+import math
 
 
 def summarize(results):
@@ -17,21 +18,21 @@ def summarize(results):
 
         # Mean
         MEAN = mean(results)
-        summary["mean"] = MEAN
+        summary["mean"] = float("{0:.2f}".format(MEAN))
 
         # Maximun
         MAX = max(results)
-        summary["max"] = MAX
+        summary["max"] = float("{0:.2f}".format(MAX))
 
         # Minimum
         MIN = min(results)
-        summary["min"] = MIN
+        summary["min"] = float("{0:.2f}".format(MIN))
 
         if SIZE > 1:
             # Following only valid for more than 1 sample point
             # Standard Deviation
             STDEV = stdev(results)
-            summary["stdev"] = STDEV
+            summary["stdev"] = float("{0:.2f}".format(STDEV))
 
             #  Variance
             # VAR = variance(results)
@@ -48,7 +49,12 @@ def summarize(results):
             BSS = (stats.t.ppf(1 - 0.025, SIZE - 1) * VART / TOL) ** 2
             # Round up or down
             # to specify strict up or down, use math.ceil() or math.floor()
-            summary["bss"] = round(BSS, 0)
+            summary["bss"] = math.ceil(BSS)
+
+            if BSS >= SIZE:
+                summary["message"] = "sufficient"
+            else:
+                summary["message"] = "insufficient"
         else:
             summary["stdev"] = "N/A"
             # summary["var"] = "N/A"
