@@ -159,18 +159,9 @@ def get_list():
     filter_content = request_info["content"]
     filter_content_extra = request_info["content_extra"]
 
-    if filter_type == "date":
-        task_list = (
-            Images.query.filter_by(userid=userid)
-            .filter_by(vineyard=filter_content)
-            .filter_by(date=filter_content_extra)
-        )
-
-    elif filter_type == "block":
-        task_list = (
-            Images.query.filter_by(userid=userid)
-            .filter_by(vineyard=filter_content)
-            .filter_by(block=filter_content_extra)
+    if filter_type == "vineyardls":
+        section_list = (
+            db.session.query(Images.vineyard).filter_by(userid=userid).distinct()
         )
     elif filter_type == "datels":
         section_list = (
@@ -185,6 +176,19 @@ def get_list():
             .filter_by(userid=userid)
             .filter_by(vineyard=filter_content)
             .distinct()
+        )
+    elif filter_type == "date":
+        task_list = (
+            Images.query.filter_by(userid=userid)
+            .filter_by(status="processed")
+            .filter_by(vineyard=filter_content)
+            .filter_by(date=filter_content_extra)
+        )
+    elif filter_type == "block":
+        task_list = (
+            Images.query.filter_by(userid=userid)
+            .filter_by(vineyard=filter_content)
+            .filter_by(block=filter_content_extra)
         )
     else:
         return jsonify("Invalid Filter Type")
