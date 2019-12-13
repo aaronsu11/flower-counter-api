@@ -1,7 +1,8 @@
 from flask import Blueprint, jsonify, request
+from datetime import datetime
 from . import db, storage
 from .models import Images, Parameters
-from .counter import count_flower
+from .counter import counterWrapper
 from .summarizer import summarize
 from .messager import email_message
 
@@ -13,6 +14,14 @@ api = Blueprint("api", __name__)
 def serverCheck():
     """Return a friendly HTTP greeting."""
     return "Server Running"
+
+
+@api.route("/algorithm_test")
+def algorithmTest():
+    # Processing
+    image_url = storage.child("test.jpg").get_url(None)
+    result, message = counterWrapper(image_url)
+    return f"Result: {result}, Status: {message}"
 
 
 # Only use when first run -> init or potentially reset database
@@ -38,6 +47,10 @@ def add_task():
     batchid = task_info["batchid"]
     path = task_info["path"]
     label = task_info["label"]
+    vineyard = task_info["vineyard"]
+    block = task_info["block"]
+    date = task_info["date"]
+    date = datetime.strptime(date, "%Y-%m-%d").date()
     name = task_info["name"]
 
     # Delete duplicate records
@@ -56,13 +69,21 @@ def add_task():
     db.session.commit()
 
     # Add record in database
-    new_task = Images(userid=userid, batchid=batchid, path=path, name=name)
+    new_task = Images(
+        userid=userid,
+        batchid=batchid,
+        path=path,
+        vineyard=vineyard,
+        block=block,
+        date=date,
+        name=name,
+    )
     db.session.add(new_task)
     db.session.commit()
 
     # Processing
     image_url = storage.child(path + name).get_url(None)
-    result = float(count_flower(image_url))
+    result, error_msg = counterWrapper(image_url)
     # result = 1
 
     params = Parameters.query.filter_by(label=label).first()
@@ -128,6 +149,65 @@ def get_report():
         email_message(summary)
 
     return jsonify({"summary": summary}), 201
+
+
+@api.route("/list", methods=["POST"])
+def get_list():
+    request_info = request.get_json()
+    userid = request_info["userid"]
+    filter_type = request_info["type"]
+    filter_content = request_info["content"]
+    filter_content_extra = request_info["content_extra"]
+
+    if filter_type == "date":
+        task_list = (
+            Images.query.filter_by(userid=userid)
+            .filter_by(vineyard=filter_content)
+            .filter_by(date=filter_content_extra)
+        )
+
+    elif filter_type == "block":
+        task_list = (
+            Images.query.filter_by(userid=userid)
+            .filter_by(vineyard=filter_content)
+            .filter_by(block=filter_content_extra)
+        )
+    elif filter_type == "datels":
+        section_list = (
+            db.session.query(Images.date)
+            .filter_by(userid=userid)
+            .filter_by(vineyard=filter_content)
+            .distinct()
+        )
+    elif filter_type == "blockls":
+        section_list = (
+            db.session.query(Images.block)
+            .filter_by(userid=userid)
+            .filter_by(vineyard=filter_content)
+            .distinct()
+        )
+    else:
+        return jsonify("Invalid Filter Type")
+    # else:
+    #     task_list = Images.query.filter_by(userid=userid).filter(
+    #         Images.path.contains(filter_content)
+    #     )
+
+    records = []
+
+    if filter_content_extra:
+        estimates = []
+        for task in task_list:
+            estimates.append(float(task.estimate))
+            records.append(
+                {"name": task.name, "path": task.path, "estimate": float(task.estimate)}
+            )
+        summary = summarize(estimates)
+        return jsonify({"summary": summary, "records": records}), 201
+    else:
+        for section in section_list:
+            records.append(section[0])
+        return jsonify({"summary": None, "records": records}), 201
 
 
 @api.route("/results/<userid>")

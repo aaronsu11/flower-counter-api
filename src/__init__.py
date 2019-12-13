@@ -5,21 +5,8 @@ import pyrebase
 from flask_mail import Mail
 from .config import Config
 
-firebase_config = {
-    "apiKey": "AIzaSyBmbEYCRih5N8ls-UYgv26OnAz67IDR8gk",
-    "authDomain": "flower-counter.firebaseapp.com",
-    "databaseURL": "https://flower-counter.firebaseio.com",
-    "projectId": "flower-counter",
-    "storageBucket": "flower-counter.appspot.com",
-    "messagingSenderId": "276724841166",
-    "appId": "1:276724841166:web:9a24d03f468502b5992e9f",
-    "measurementId": "G-4HSDYZE7SQ",
-}
-
-firebase = pyrebase.initialize_app(firebase_config)
-
+firebase = pyrebase.initialize_app(Config.firebase_config)
 storage = firebase.storage()
-
 db = SQLAlchemy()
 cors = CORS()
 mail = Mail()

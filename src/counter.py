@@ -1,9 +1,10 @@
 import cv2 as cv
 import numpy as np
 import urllib
+from .algorithm import algorithm
 
 
-def count_flower(image_url):
+def counterWrapper(image_url):
 
     url_response = urllib.request.urlopen(image_url)
     image_array = np.asarray(bytearray(url_response.read()), dtype=np.uint8)
@@ -11,14 +12,15 @@ def count_flower(image_url):
     image = cv.imdecode(image_array, cv.IMREAD_COLOR)
     del image_array
 
-    # cv.imshow("URL Image", image)
+    result = 0
+    try:
+        result = float(algorithm(image))
+    except ValueError as err:
+        # print(f"{err}")
+        message = f"Value Error - {err}"
+    except:
+        message = "Unexpected Error"
+    else:
+        message = "Success"
 
-    lower_green = np.array([35, 0, 0])
-    upper_green = np.array([80, 255, 255])
-
-    hsv_image = cv.cvtColor(image, cv.COLOR_BGR2HSV)
-    mask = cv.inRange(hsv_image, lower_green, upper_green)
-    count = (mask == 255).sum()
-    green_rate = 100 * count / mask.size
-
-    return green_rate
+    return result, message
