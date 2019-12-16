@@ -1,4 +1,4 @@
-# Version 1.0
+# Version 1.1
 # Created by Aaron Su 16 Dec 2019
 
 from src import create_app
