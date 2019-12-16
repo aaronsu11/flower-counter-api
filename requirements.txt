@@ -33,7 +33,7 @@ psycopg2-binary==2.8.3
 pyasn1==0.4.7
 pyasn1-modules==0.2.6
 pycodestyle==2.5.0
-pycryptodome==3.4.3
+pycryptodome==3.6.6
 pyflakes==2.1.1
 pylint==2.3.1
 pyparsing==2.4.2
