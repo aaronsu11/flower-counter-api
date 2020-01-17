@@ -46,9 +46,10 @@ def add_task():
     userid = task_info["userid"]
     batchid = task_info["batchid"]
     path = task_info["path"]
-    label = task_info["label"]
     vineyard = task_info["vineyard"]
     block = task_info["block"]
+    variety = task_info["variety"]
+    el_stage = task_info["el_stage"]
     date = task_info["date"]
     date = datetime.strptime(date, "%Y-%m-%d").date()
     name = task_info["name"]
@@ -75,6 +76,8 @@ def add_task():
         path=path,
         vineyard=vineyard,
         block=block,
+        variety=variety,
+        el_stage=el_stage,
         date=date,
         name=name,
     )
@@ -86,6 +89,7 @@ def add_task():
     result, error_msg = counterWrapper(image_url)
     # result = 1
 
+    label = f"{variety}@{el_stage}"
     params = Parameters.query.filter_by(label=label).first()
     if params:
         slope = float(params.slope)
@@ -126,10 +130,12 @@ def get_report():
     block_id = batch_info["block_id"]
     sendEmail = batch_info["sendEmail"]
     # path = batch_info["path"]
-    if userid == 0:
-        path = f"images/{userid}/{email}/{vineyard}/{block_id}/{variety}@{el_stage}/{date}/"
-    else:
+    if userid:
         path = f"images/{userid}/{vineyard}/{block_id}/{variety}@{el_stage}/{date}/"
+    else:
+        path = (
+            f"images/guest/{email}/{vineyard}/{block_id}/{variety}@{el_stage}/{date}/"
+        )
 
     if batchid:
         task_list = (
@@ -156,62 +162,94 @@ def get_list():
     request_info = request.get_json()
     userid = request_info["userid"]
     filter_type = request_info["type"]
-    filter_content = request_info["content"]
-    filter_content_extra = request_info["content_extra"]
 
+    # Query object containing all records for this user
+    user_records = db.session.query(Images).filter_by(userid=userid)
+
+    dataRows = []
+    dataTable = {}
     if filter_type == "vineyardls":
-        section_list = (
-            db.session.query(Images.vineyard).filter_by(userid=userid).distinct()
-        )
-    elif filter_type == "datels":
-        section_list = (
-            db.session.query(Images.date)
-            .filter_by(userid=userid)
-            .filter_by(vineyard=filter_content)
-            .distinct()
-        )
+        section_list = user_records.distinct(Images.vineyard).group_by(Images.vineyard)
+        for section in section_list:
+            print(section)
+            vineyard = section.vineyard
+            vineyard_records = user_records.filter_by(vineyard=vineyard)
+            # print(name)
+            latest_record = vineyard_records.order_by(Images.date.desc()).first().date
+            n_block = (
+                vineyard_records.distinct(Images.block).group_by(Images.block).count()
+            )
+            dataRows.append([vineyard, latest_record, n_block])
+        dataTable = {
+            "headers": ["Name", "Latest Record", "No. of Blocks"],
+            "accessors": ["name", "latest_record", "n_block"],
+            "dataRows": dataRows,
+        }
     elif filter_type == "blockls":
+        vineyard = request_info["vineyard"]
         section_list = (
-            db.session.query(Images.block)
-            .filter_by(userid=userid)
-            .filter_by(vineyard=filter_content)
-            .distinct()
+            user_records.filter_by(vineyard=vineyard)
+            .distinct(Images.block)
+            .group_by(Images.block)
         )
-    elif filter_type == "date":
-        task_list = (
-            Images.query.filter_by(userid=userid)
-            .filter_by(status="processed")
-            .filter_by(vineyard=filter_content)
-            .filter_by(date=filter_content_extra)
+        for section in section_list:
+            block = section.block
+            block_records = user_records.filter_by(vineyard=vineyard).filter_by(
+                block=block
+            )
+            latest_record = block_records.order_by(Images.date.desc()).first().date
+            variety = block_records.first().variety
+            dataRows.append([block, latest_record, variety])
+        dataTable = {
+            "headers": ["Name", "Latest Record", "Variety"],
+            "accessors": ["name", "latest_record", "variety"],
+            "dataRows": dataRows,
+        }
+    elif filter_type == "datasetls":
+        vineyard = request_info["vineyard"]
+        block = request_info["block"]
+        section_list = (
+            user_records.filter_by(vineyard=vineyard)
+            .filter_by(block=block)
+            .distinct(Images.batchid)
+            .group_by(Images.batchid)
         )
-    elif filter_type == "block":
-        task_list = (
-            Images.query.filter_by(userid=userid)
-            .filter_by(vineyard=filter_content)
-            .filter_by(block=filter_content_extra)
+        # for section in section_list:
+        for index, section in enumerate(section_list):
+            date = section.date
+            dataset = f"DS{index}"
+            batchid = section.batchid
+            el_stage = section.el_stage
+            dataRows.append([dataset, date, el_stage, batchid])
+        dataTable = {
+            "headers": ["Name", "Date", "EL Stage", "Time Uploaded"],
+            "accessors": ["name", "date", "el_stage", "time_uploaded"],
+            "dataRows": dataRows,
+        }
+    elif filter_type == "imagels":
+        vineyard = request_info["vineyard"]
+        block = request_info["block"]
+        batchid = request_info["dataset"]
+        print(batchid)
+        section_list = (
+            user_records.filter_by(vineyard=vineyard)
+            .filter_by(block=block)
+            .filter_by(batchid=batchid)
         )
+        for section in section_list:
+            image = section.name
+            preview = section.path
+            estimate = float(section.estimate)
+            dataRows.append([image, preview, estimate])
+        dataTable = {
+            "headers": ["Name", "Preview", "Estimate"],
+            "accessors": ["name", "preview", "estimate"],
+            "dataRows": dataRows,
+        }
     else:
         return jsonify("Invalid Filter Type")
-    # else:
-    #     task_list = Images.query.filter_by(userid=userid).filter(
-    #         Images.path.contains(filter_content)
-    #     )
 
-    records = []
-
-    if filter_content_extra:
-        estimates = []
-        for task in task_list:
-            estimates.append(float(task.estimate))
-            records.append(
-                {"name": task.name, "path": task.path, "estimate": float(task.estimate)}
-            )
-        summary = summarize(estimates)
-        return jsonify({"summary": summary, "records": records}), 201
-    else:
-        for section in section_list:
-            records.append(section[0])
-        return jsonify({"summary": None, "records": records}), 201
+    return (jsonify(dataTable), 201)
 
 
 @api.route("/results/<userid>")
