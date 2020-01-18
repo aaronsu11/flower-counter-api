@@ -60,8 +60,6 @@ def add_task():
         .filter_by(userid=userid)
         .filter_by(path=path)
         .filter_by(name=name)
-        # .order_by(Images.id.desc())
-        # .first()
     )
 
     for task in old_tasks:
@@ -169,16 +167,27 @@ def get_list():
     dataRows = []
     dataTable = {}
     if filter_type == "vineyardls":
-        section_list = user_records.distinct(Images.vineyard).group_by(Images.vineyard)
+        section_list = (
+            db.session.query(Images.vineyard).distinct().filter_by(userid=userid)
+        )
+        # This syntax doesn't work for pg8000
+        # section_list = user_records.distinct(Images.vineyard).group_by(Images.vineyard)
         for section in section_list:
-            print(section)
             vineyard = section.vineyard
-            vineyard_records = user_records.filter_by(vineyard=vineyard)
-            # print(name)
-            latest_record = vineyard_records.order_by(Images.date.desc()).first().date
-            n_block = (
-                vineyard_records.distinct(Images.block).group_by(Images.block).count()
+            latest_record = (
+                user_records.filter_by(vineyard=vineyard)
+                .order_by(Images.date.desc())
+                .first()
+                .date
             )
+            n_block = (
+                db.session.query(Images.block)
+                .distinct()
+                .filter_by(userid=userid)
+                .filter_by(vineyard=vineyard)
+                .count()
+            )
+            # vineyard_records.distinct(Images.block).group_by(Images.block).count()
             dataRows.append([vineyard, latest_record, n_block])
         dataTable = {
             "headers": ["Name", "Latest Record", "No. of Blocks"],
@@ -188,9 +197,11 @@ def get_list():
     elif filter_type == "blockls":
         vineyard = request_info["vineyard"]
         section_list = (
-            user_records.filter_by(vineyard=vineyard)
-            .distinct(Images.block)
-            .group_by(Images.block)
+            db.session.query(Images.block)
+            .distinct()
+            .filter_by(userid=userid)
+            .filter_by(vineyard=vineyard)
+            .all()
         )
         for section in section_list:
             block = section.block
@@ -209,17 +220,21 @@ def get_list():
         vineyard = request_info["vineyard"]
         block = request_info["block"]
         section_list = (
-            user_records.filter_by(vineyard=vineyard)
+            db.session.query(Images.batchid)
+            .distinct()
+            .filter_by(userid=userid)
+            .filter_by(vineyard=vineyard)
             .filter_by(block=block)
-            .distinct(Images.batchid)
-            .group_by(Images.batchid)
+            .all()
         )
         # for section in section_list:
         for index, section in enumerate(section_list):
-            date = section.date
-            dataset = f"DS{index}"
             batchid = section.batchid
-            el_stage = section.el_stage
+            dataset_records = user_records.filter_by(vineyard=vineyard).filter_by(
+                block=block).filter_by(batchid=batchid)
+            dataset = f"DS{index+1}"
+            date = dataset_records.first().date
+            el_stage = dataset_records.first().el_stage
             dataRows.append([dataset, date, el_stage, batchid])
         dataTable = {
             "headers": ["Name", "Date", "EL Stage", "Time Uploaded"],
@@ -230,7 +245,6 @@ def get_list():
         vineyard = request_info["vineyard"]
         block = request_info["block"]
         batchid = request_info["dataset"]
-        print(batchid)
         section_list = (
             user_records.filter_by(vineyard=vineyard)
             .filter_by(block=block)

@@ -5,6 +5,15 @@ import pyrebase
 from flask_mail import Mail
 from .config import Config
 
+try:
+    import googleclouddebugger
+
+    googleclouddebugger.enable()
+    print("Debugger Enabled")
+except ImportError:
+    print("Running Locally")
+    pass
+
 firebase = pyrebase.initialize_app(Config.firebase_config)
 storage = firebase.storage()
 db = SQLAlchemy()
