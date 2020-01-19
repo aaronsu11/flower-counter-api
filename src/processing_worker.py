@@ -174,12 +174,8 @@ def get_list():
         # section_list = user_records.distinct(Images.vineyard).group_by(Images.vineyard)
         for section in section_list:
             vineyard = section.vineyard
-            latest_record = (
-                user_records.filter_by(vineyard=vineyard)
-                .order_by(Images.date.desc())
-                .first()
-                .date
-            )
+            vineyard_records = user_records.filter_by(vineyard=vineyard)
+            latest_record = vineyard_records.order_by(Images.date.desc()).first().date
             n_block = (
                 db.session.query(Images.block)
                 .distinct()
@@ -187,11 +183,18 @@ def get_list():
                 .filter_by(vineyard=vineyard)
                 .count()
             )
+            variables = []
+            for record in vineyard_records:
+                variables.append(float(record.estimate))
+
+            stats = summarize(variables)
             # vineyard_records.distinct(Images.block).group_by(Images.block).count()
-            dataRows.append([vineyard, latest_record, n_block])
+            dataRows.append(
+                [vineyard, latest_record, n_block, stats["mean"], stats["stdev"]]
+            )
         dataTable = {
-            "headers": ["Name", "Latest Record", "No. of Blocks"],
-            "accessors": ["name", "latest_record", "n_block"],
+            "headers": ["Name", "Latest Record", "No. of Blocks", "Mean", "Stdev"],
+            "accessors": ["name", "latest_record", "n_block", "mean", "stdev"],
             "dataRows": dataRows,
         }
     elif filter_type == "blockls":
@@ -210,10 +213,17 @@ def get_list():
             )
             latest_record = block_records.order_by(Images.date.desc()).first().date
             variety = block_records.first().variety
-            dataRows.append([block, latest_record, variety])
+            variables = []
+            for record in block_records:
+                variables.append(float(record.estimate))
+
+            stats = summarize(variables)
+            dataRows.append(
+                [block, latest_record, variety, stats["mean"], stats["stdev"]]
+            )
         dataTable = {
-            "headers": ["Name", "Latest Record", "Variety"],
-            "accessors": ["name", "latest_record", "variety"],
+            "headers": ["Name", "Latest Record", "Variety", "Mean", "Stdev"],
+            "accessors": ["name", "latest_record", "variety", "mean", "stdev"],
             "dataRows": dataRows,
         }
     elif filter_type == "datasetls":
@@ -227,18 +237,54 @@ def get_list():
             .filter_by(block=block)
             .all()
         )
+
         # for section in section_list:
         for index, section in enumerate(section_list):
             batchid = section.batchid
-            dataset_records = user_records.filter_by(vineyard=vineyard).filter_by(
-                block=block).filter_by(batchid=batchid)
+            dataset_records = (
+                user_records.filter_by(vineyard=vineyard)
+                .filter_by(block=block)
+                .filter_by(batchid=batchid)
+            )
             dataset = f"DS{index+1}"
             date = dataset_records.first().date
             el_stage = dataset_records.first().el_stage
-            dataRows.append([dataset, date, el_stage, batchid])
+            variables = []
+            for record in dataset_records:
+                variables.append(float(record.estimate))
+
+            stats = summarize(variables)
+            dataRows.append(
+                [
+                    dataset,
+                    date,
+                    el_stage,
+                    stats["size"],
+                    stats["mean"],
+                    stats["stdev"],
+                    batchid,
+                ]
+            )
+
         dataTable = {
-            "headers": ["Name", "Date", "EL Stage", "Time Uploaded"],
-            "accessors": ["name", "date", "el_stage", "time_uploaded"],
+            "headers": [
+                "Name",
+                "Date",
+                "EL Stage",
+                "Time Uploaded",
+                "Size",
+                "Mean",
+                "Stdev",
+            ],
+            "accessors": [
+                "name",
+                "date",
+                "el_stage",
+                "time_uploaded",
+                "size",
+                "mean",
+                "stdev",
+            ],
             "dataRows": dataRows,
         }
     elif filter_type == "imagels":
