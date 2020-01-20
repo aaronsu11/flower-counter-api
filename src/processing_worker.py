@@ -162,25 +162,41 @@ def get_list():
     filter_type = request_info["type"]
 
     # Query object containing all records for this user
-    user_records = db.session.query(Images).filter_by(userid=userid)
+    user_records = (
+        db.session.query(Images)
+        .filter_by(userid=userid)
+        .filter(Images.status != "deleted")
+    )
 
     dataRows = []
     dataTable = {}
-    if filter_type == "vineyardls":
+    if user_records.first() is None:
+        dataTable = {
+            "headers": ["Name", "Latest Record", "No. of Blocks", "Mean", "Stdev"],
+            "accessors": ["name", "latest_record", "n_block", "mean", "stdev"],
+            "dataRows": dataRows,
+        }
+    elif filter_type == "vineyardls":
         section_list = (
-            db.session.query(Images.vineyard).distinct().filter_by(userid=userid)
+            db.session.query(Images.vineyard)
+            .distinct()
+            .filter_by(userid=userid)
+            .filter(Images.status != "deleted")
+            .all()
         )
         # This syntax doesn't work for pg8000
         # section_list = user_records.distinct(Images.vineyard).group_by(Images.vineyard)
         for section in section_list:
             vineyard = section.vineyard
             vineyard_records = user_records.filter_by(vineyard=vineyard)
-            latest_record = vineyard_records.order_by(Images.date.desc()).first().date
+            latest_record = vineyard_records.order_by(Images.date.desc()).first().date.strftime("%d %b %Y")
+            print(latest_record)
             n_block = (
                 db.session.query(Images.block)
                 .distinct()
                 .filter_by(userid=userid)
                 .filter_by(vineyard=vineyard)
+                .filter(Images.status != "deleted")
                 .count()
             )
             variables = []
@@ -204,6 +220,7 @@ def get_list():
             .distinct()
             .filter_by(userid=userid)
             .filter_by(vineyard=vineyard)
+            .filter(Images.status != "deleted")
             .all()
         )
         for section in section_list:
@@ -211,7 +228,7 @@ def get_list():
             block_records = user_records.filter_by(vineyard=vineyard).filter_by(
                 block=block
             )
-            latest_record = block_records.order_by(Images.date.desc()).first().date
+            latest_record = block_records.order_by(Images.date.desc()).first().date.strftime("%d %b %Y")
             variety = block_records.first().variety
             variables = []
             for record in block_records:
@@ -235,6 +252,7 @@ def get_list():
             .filter_by(userid=userid)
             .filter_by(vineyard=vineyard)
             .filter_by(block=block)
+            .filter(Images.status != "deleted")
             .all()
         )
 
@@ -246,8 +264,9 @@ def get_list():
                 .filter_by(block=block)
                 .filter_by(batchid=batchid)
             )
+
             dataset = f"DS{index+1}"
-            date = dataset_records.first().date
+            date = dataset_records.first().date.strftime("%d %b %Y")
             el_stage = dataset_records.first().el_stage
             variables = []
             for record in dataset_records:
@@ -267,24 +286,8 @@ def get_list():
             )
 
         dataTable = {
-            "headers": [
-                "Name",
-                "Date",
-                "EL Stage",
-                "Time Uploaded",
-                "Size",
-                "Mean",
-                "Stdev",
-            ],
-            "accessors": [
-                "name",
-                "date",
-                "el_stage",
-                "time_uploaded",
-                "size",
-                "mean",
-                "stdev",
-            ],
+            "headers": ["Name", "Date", "EL Stage", "Size", "Mean", "Stdev"],
+            "accessors": ["name", "date", "el_stage", "size", "mean", "stdev"],
             "dataRows": dataRows,
         }
     elif filter_type == "imagels":
@@ -295,12 +298,14 @@ def get_list():
             user_records.filter_by(vineyard=vineyard)
             .filter_by(block=block)
             .filter_by(batchid=batchid)
+            .order_by(Images.name)
         )
         for section in section_list:
             image = section.name
-            preview = section.path
+            path = section.path
+            preview_url = storage.child(path + image).get_url(None)
             estimate = float(section.estimate)
-            dataRows.append([image, preview, estimate])
+            dataRows.append([image, preview_url, estimate])
         dataTable = {
             "headers": ["Name", "Preview", "Estimate"],
             "accessors": ["name", "preview", "estimate"],
@@ -310,6 +315,58 @@ def get_list():
         return jsonify("Invalid Filter Type")
 
     return (jsonify(dataTable), 201)
+
+
+@api.route("/delete", methods=["POST"])
+def delete_target():
+    request_info = request.get_json()
+    userid = request_info["uid"]
+    delete_type = request_info["type"]
+
+    # Query object containing all records for this user
+    user_records = (
+        db.session.query(Images)
+        .filter_by(userid=userid)
+        .filter(Images.status != "deleted")
+    )
+
+    records_to_delete = []
+    if delete_type == "vineyard":
+        vineyard_name = request_info["name"]
+        records_to_delete = user_records.filter_by(vineyard=vineyard_name)
+    elif delete_type == "block":
+        vineyard = request_info["vineyard"]
+        block_name = request_info["name"]
+        records_to_delete = user_records.filter_by(vineyard=vineyard).filter_by(
+            block=block_name
+        )
+    elif delete_type == "dataset":
+        vineyard = request_info["vineyard"]
+        block = request_info["block"]
+        dataset_name = request_info["name"]
+        records_to_delete = (
+            user_records.filter_by(vineyard=vineyard)
+            .filter_by(block=block)
+            .filter_by(batchid=dataset_name)
+        )
+    elif delete_type == "image":
+        vineyard = request_info["vineyard"]
+        block = request_info["block"]
+        batchid = request_info["dataset"]
+        image_name = request_info["name"]
+        records_to_delete = (
+            user_records.filter_by(vineyard=vineyard)
+            .filter_by(block=block)
+            .filter_by(batchid=batchid)
+            .filter_by(name=image_name)
+        )
+    else:
+        return jsonify("Invalid Delete Target")
+
+    for record in records_to_delete:
+        record.status = "deleted"
+    db.session.commit()
+    return (jsonify("Target deleted"), 201)
 
 
 @api.route("/results/<userid>")
