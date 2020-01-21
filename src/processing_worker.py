@@ -187,6 +187,7 @@ def get_list():
             .distinct()
             .filter_by(userid=userid)
             .filter(Images.status != "deleted")
+            .order_by(Images.vineyard)
             .all()
         )
         # This syntax doesn't work for pg8000
@@ -230,6 +231,7 @@ def get_list():
             .filter_by(userid=userid)
             .filter_by(vineyard=vineyard)
             .filter(Images.status != "deleted")
+            .order_by(Images.block)
             .all()
         )
         for section in section_list:
