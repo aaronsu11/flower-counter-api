@@ -121,26 +121,31 @@ def get_report():
     userid = batch_info["userid"]
     batchid = batch_info["batchid"]
     email = batch_info["email"]
-    date = batch_info["date"]
-    variety = batch_info["variety"]
-    el_stage = batch_info["el_stage"]
-    vineyard = batch_info["vineyard"]
-    block_id = batch_info["block_id"]
+    # date = batch_info["date"]
+    # variety = batch_info["variety"]
+    # el_stage = batch_info["el_stage"]
+    # vineyard = batch_info["vineyard"]
+    # block = batch_info["block"]
     sendEmail = batch_info["sendEmail"]
-    # path = batch_info["path"]
-    if userid:
-        path = f"images/{userid}/{vineyard}/{block_id}/{variety}@{el_stage}/{date}/"
-    else:
-        path = (
-            f"images/guest/{email}/{vineyard}/{block_id}/{variety}@{el_stage}/{date}/"
-        )
 
-    if batchid:
+    if userid:
+        # path = f"images/{userid}/{vineyard}/{block}/{variety}@{el_stage}/{date}/"
         task_list = (
-            Images.query.filter_by(userid=userid).filter_by(batchid=batchid).all()
+            db.session.query(Images)
+            .filter_by(userid=userid)
+            .filter_by(batchid=batchid)
+            .filter(Images.status != "deleted")
+            .all()
         )
     else:
-        task_list = Images.query.filter_by(userid=userid).filter_by(path=path).all()
+        # path = f"images/guest/{email}/{vineyard}/{block}/{variety}@{el_stage}/{date}/"
+        task_list = (
+            db.session.query(Images)
+            .filter_by(userid=email)
+            .filter_by(batchid=batchid)
+            .filter(Images.status != "deleted")
+            .all()
+        )
 
     results = []
     for task in task_list:
@@ -189,7 +194,11 @@ def get_list():
         for section in section_list:
             vineyard = section.vineyard
             vineyard_records = user_records.filter_by(vineyard=vineyard)
-            latest_record = vineyard_records.order_by(Images.date.desc()).first().date.strftime("%d %b %Y")
+            latest_record = (
+                vineyard_records.order_by(Images.date.desc())
+                .first()
+                .date.strftime("%d %b %Y")
+            )
             print(latest_record)
             n_block = (
                 db.session.query(Images.block)
@@ -228,7 +237,11 @@ def get_list():
             block_records = user_records.filter_by(vineyard=vineyard).filter_by(
                 block=block
             )
-            latest_record = block_records.order_by(Images.date.desc()).first().date.strftime("%d %b %Y")
+            latest_record = (
+                block_records.order_by(Images.date.desc())
+                .first()
+                .date.strftime("%d %b %Y")
+            )
             variety = block_records.first().variety
             variables = []
             for record in block_records:
