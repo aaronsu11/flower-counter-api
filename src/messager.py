@@ -6,7 +6,7 @@ from . import mail
 def email_message(summary):
     email = summary["batch_info"]["email"]
     vineyard = summary["batch_info"]["vineyard"]
-    block_name = summary["batch_info"]["block_id"]
+    block_name = summary["batch_info"]["block"]
     msg = Message(
         subject=f"Results for Vineyard {vineyard}, Block {block_name} from UNSW Flower Counting System ",
         recipients=[email],
