@@ -135,6 +135,7 @@ def get_report():
             .filter_by(userid=userid)
             .filter_by(batchid=batchid)
             .filter(Images.status != "deleted")
+            .filter(Images.status != "uploaded")
             .all()
         )
     else:
@@ -144,6 +145,7 @@ def get_report():
             .filter_by(userid=email)
             .filter_by(batchid=batchid)
             .filter(Images.status != "deleted")
+            .filter(Images.status != "uploaded")
             .all()
         )
 
@@ -171,6 +173,7 @@ def get_list():
         db.session.query(Images)
         .filter_by(userid=userid)
         .filter(Images.status != "deleted")
+        .filter(Images.status != "uploaded")
     )
 
     dataRows = []
@@ -187,6 +190,7 @@ def get_list():
             .distinct()
             .filter_by(userid=userid)
             .filter(Images.status != "deleted")
+            .filter(Images.status != "uploaded")
             .order_by(Images.vineyard)
             .all()
         )
@@ -196,17 +200,18 @@ def get_list():
             vineyard = section.vineyard
             vineyard_records = user_records.filter_by(vineyard=vineyard)
             latest_record = (
-                vineyard_records.order_by(Images.date.desc())
+                vineyard_records
+                .order_by(Images.date.desc())
                 .first()
                 .date.strftime("%d %b %Y")
             )
-            print(latest_record)
             n_block = (
                 db.session.query(Images.block)
                 .distinct()
                 .filter_by(userid=userid)
                 .filter_by(vineyard=vineyard)
                 .filter(Images.status != "deleted")
+                .filter(Images.status != "uploaded")
                 .count()
             )
             variables = []
@@ -231,6 +236,7 @@ def get_list():
             .filter_by(userid=userid)
             .filter_by(vineyard=vineyard)
             .filter(Images.status != "deleted")
+            .filter(Images.status != "uploaded")
             .order_by(Images.block)
             .all()
         )
@@ -268,6 +274,7 @@ def get_list():
             .filter_by(vineyard=vineyard)
             .filter_by(block=block)
             .filter(Images.status != "deleted")
+            .filter(Images.status != "uploaded")
             .all()
         )
 
@@ -343,6 +350,7 @@ def delete_target():
         db.session.query(Images)
         .filter_by(userid=userid)
         .filter(Images.status != "deleted")
+        .filter(Images.status != "uploaded")
     )
 
     records_to_delete = []
