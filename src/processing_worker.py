@@ -327,6 +327,7 @@ def get_list():
             path = section.path
             preview_url = storage.child(path + image).get_url(None)
             estimate = float(section.estimate)
+            estimate = float("{0:.2f}".format(estimate))
             dataRows.append([image, preview_url, estimate])
         dataTable = {
             "headers": ["Name", "Preview", "Estimate"],

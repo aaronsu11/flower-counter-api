@@ -11,7 +11,7 @@ class Images(db.Model):
     date = db.Column(db.Date, nullable=False)
     variety = db.Column(db.String(50), nullable=False)
     el_stage = db.Column(db.String(10), nullable=False)
-    name = db.Column(db.String(50), nullable=False)
+    name = db.Column(db.String(80), nullable=False)
     status = db.Column(db.String(20), default="uploaded")
     result = db.Column(db.Numeric)
     estimate = db.Column(db.Numeric)
