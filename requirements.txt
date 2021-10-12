@@ -27,7 +27,7 @@ matplotlib==3.1.1
 mccabe==0.6.1
 numpy==1.17.2
 oauth2client==3.0.0
-opencv-python==4.1.1.26
+opencv-python==4.2.0.32
 pg8000==1.13.2
 protobuf==3.10.0rc1
 psycopg2-binary==2.8.3
